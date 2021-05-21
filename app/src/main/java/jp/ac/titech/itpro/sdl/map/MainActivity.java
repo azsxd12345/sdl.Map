@@ -7,6 +7,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.View;
+import android.widget.Button;
+
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -40,13 +43,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationRequest request;
     private LocationCallback callback;
 
+    private Button button;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_main);
 
+        button = findViewById(R.id.button);
         infoView = findViewById(R.id.info_view);
+
         SupportMapFragment fragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
         if (fragment != null) {
             Log.d(TAG, "onCreate: getMapAsync");
@@ -55,15 +62,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         locationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        request = LocationRequest.create();
-        request.setInterval(10000L);
-        request.setFastestInterval(5000L);
-        request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG,"onClick");
+                request = LocationRequest.create();
+                request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+                request.setExpirationDuration(1000L);
+                locationClient.requestLocationUpdates(request, callback, null);
+            }
+        });
 
         callback = new LocationCallback() {
             @Override
-            public void onLocationResult(@NonNull LocationResult locationResult) {
+            public void onLocationResult(LocationResult locationResult) {
                 Log.d(TAG, "onLocationResult");
+                if (locationResult == null) {
+                    Log.d(TAG, "onLocationResult: locationResult == null");
+                    return;
+                }
                 Location location = locationResult.getLastLocation();
                 LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
                 infoView.setText(getString(R.string.latlng_format, ll.latitude, ll.longitude));
@@ -74,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 map.animateCamera(CameraUpdateFactory.newLatLng(ll));
             }
         };
+
     }
 
     @Override
